@@ -36,38 +36,54 @@
       </default>
       <site size="0.001" rgba="0.5 0.5 0.5 0.3" group="4"/>
     </default>
+    <default class="hande">
+      <default class="hande_right_finger">
+      <joint type="slide" range="0 0.025" actuatorfrcrange="-100 100"/>
+      </default>
+      <default class="hande_left_finger">
+      <joint type="slide" range="0 0.025" actuatorfrcrange="-100 100"/>
+      </default>
+    </default>
   </default>
 
   <asset>
+    <texture type="skybox" builtin="gradient" rgb1="0.3 0.5 0.7" rgb2="0 0 0" width="512" height="3072"/>
+    <texture type="2d" name="groundplane" builtin="checker" mark="edge" rgb1="0.2 0.3 0.4" rgb2="0.1 0.2 0.3" markrgb="0.8 0.8 0.8" width="300" height="300"/>
     <material class="ur10e" name="black" rgba="0.033 0.033 0.033 1"/>
     <material class="ur10e" name="jointgray" rgba="0.278 0.278 0.278 1"/>
     <material class="ur10e" name="linkgray" rgba="0.82 0.82 0.82 1"/>
     <material class="ur10e" name="urblue" rgba="0.49 0.678 0.8 1"/>
+    <material name="groundplane" texture="groundplane" texuniform="true" texrepeat="5 5" reflectance="0.2"/>
 
-    <mesh file="base_0.obj"/>
-    <mesh file="base_1.obj"/>
-    <mesh file="shoulder_0.obj"/>
-    <mesh file="shoulder_1.obj"/>
-    <mesh file="shoulder_2.obj"/>
-    <mesh file="upperarm_0.obj"/>
-    <mesh file="upperarm_1.obj"/>
-    <mesh file="upperarm_2.obj"/>
-    <mesh file="upperarm_3.obj"/>
-    <mesh file="forearm_0.obj"/>
-    <mesh file="forearm_1.obj"/>
-    <mesh file="forearm_2.obj"/>
-    <mesh file="forearm_3.obj"/>
-    <mesh file="wrist1_0.obj"/>
-    <mesh file="wrist1_1.obj"/>
-    <mesh file="wrist1_2.obj"/>
-    <mesh file="wrist2_0.obj"/>
-    <mesh file="wrist2_1.obj"/>
-    <mesh file="wrist2_2.obj"/>
-    <mesh file="wrist3.obj"/>
+    <mesh file="robot_assets/base_0.obj"/>
+    <mesh file="robot_assets/base_1.obj"/>
+    <mesh file="robot_assets/shoulder_0.obj"/>
+    <mesh file="robot_assets/shoulder_1.obj"/>
+    <mesh file="robot_assets/shoulder_2.obj"/>
+    <mesh file="robot_assets/upperarm_0.obj"/>
+    <mesh file="robot_assets/upperarm_1.obj"/>
+    <mesh file="robot_assets/upperarm_2.obj"/>
+    <mesh file="robot_assets/upperarm_3.obj"/>
+    <mesh file="robot_assets/forearm_0.obj"/>
+    <mesh file="robot_assets/forearm_1.obj"/>
+    <mesh file="robot_assets/forearm_2.obj"/>
+    <mesh file="robot_assets/forearm_3.obj"/>
+    <mesh file="robot_assets/wrist1_0.obj"/>
+    <mesh file="robot_assets/wrist1_1.obj"/>
+    <mesh file="robot_assets/wrist1_2.obj"/>
+    <mesh file="robot_assets/wrist2_0.obj"/>
+    <mesh file="robot_assets/wrist2_1.obj"/>
+    <mesh file="robot_assets/wrist2_2.obj"/>
+    <mesh file="robot_assets/wrist3.obj"/>
+    <mesh name="hande" file="robot_assets/hand-e.stl"/>
+    <mesh name="coupler" file="robot_assets/coupler.stl"/>
+    <mesh name="right_finger" file="robot_assets/finger_1.stl"/>
+    <mesh name="left_finger" file="robot_assets/finger_2.stl"/>
+  
   </asset>
-
   <worldbody>
     <light name="spotlight" mode="targetbodycom" target="wrist_2_link" pos="0 -1 2"/>
+    <camera name= "side1" pos = " " quat= " "
     <body name="base" quat="1 0 0 1" childclass="ur10e">
       <inertial mass="4.0" pos="0 0 0" diaginertia="0.0061063308908 0.0061063308908 0.01125"/>
       <geom mesh="base_0" material="black" class="visual"/>
@@ -121,6 +137,11 @@
                   <geom material="linkgray" mesh="wrist3" class="visual"/>
                   <geom class="eef_collision" pos="0 0.097 0" quat="1 1 0 0" size="0.046 0.02"/>
                   <site name="attachment_site" pos="0 0.1 0" quat="-1 1 0 0"/>
+                  <body name="attachment_site_body" pos="0.0 0.125 0.0" euler="-1.570796 0 0">
+                    <include file="gripper.xml"/>
+                    <body name="2f85_grip_point_body" pos="0.0 0.0 0.165" euler="0 0 0">
+                    </body>
+                  </body>
                 </body>
               </body>
             </body>
@@ -130,16 +151,37 @@
     </body>
   </worldbody>
 
-  <actuator>
-    <general class="size4" name="shoulder_pan" joint="shoulder_pan_joint"/>
-    <general class="size4" name="shoulder_lift" joint="shoulder_lift_joint"/>
-    <general class="size3_limited" name="elbow" joint="elbow_joint"/>
-    <general class="size2" name="wrist_1" joint="wrist_1_joint"/>
-    <general class="size2" name="wrist_2" joint="wrist_2_joint"/>
-    <general class="size2" name="wrist_3" joint="wrist_3_joint"/>
-  </actuator>
-
-  <keyframe>
-    <key name="home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0" ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0"/>
-  </keyframe>
+<contact>
+  <exclude body1="hande" body2="hande_left_finger"/>
+  <exclude body1="hande" body2="hande_right_finger"/>
+</contact>
+<!-- 
+    This adds stability to the model by having a tendon that distributes the forces between both
+    joints, such that the equality constraint doesn't have to do that much work in order to equalize
+    both joints. Since both joints share the same sign, we split the force between both equally by
+    setting coef=0.5
+   -->
+<equality>
+  <joint joint1="hande_left_finger_joint" joint2="hande_right_finger_joint" polycoef="0 1 0 0 0"/>
+  <!--<weld body1="hande" body2="" anchor="0 0 0" torquescale="1" relpose="0 0 0 1 0 0 0" solref="0.001" solimp="1 1 1 1 5"/> -->
+</equality>
+<tendon>
+  <fixed name="split">
+    <joint joint="hande_left_finger_joint" coef="0.5"/>
+    <joint joint="hande_right_finger_joint" coef="0.5"/>
+  </fixed>
+</tendon>
+<actuator>
+  <general class="size4" name="shoulder_pan" joint="shoulder_pan_joint"/>
+  <general class="size4" name="shoulder_lift" joint="shoulder_lift_joint"/>
+  <general class="size3_limited" name="elbow" joint="elbow_joint"/>
+  <general class="size2" name="wrist_1" joint="wrist_1_joint"/>
+  <general class="size2" name="wrist_2" joint="wrist_2_joint"/>
+  <general class="size2" name="wrist_3" joint="wrist_3_joint"/>
+  <!--     2f 85 actuator -->
+  <general name="hande_fingers_actuator" class="hande" tendon="split" ctrlrange="0 255" forcerange="-200 200" gaintype="affine" biastype="affine" gainprm="0.00980392" biasprm="0 -100 -10"/>
+</actuator>
+<!--   <keyframe> -->
+<!--     <key name="home" qpos="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0.0 0.0 0 0.75 0.35 0.31 1 0  0 0" ctrl="-1.5708 -1.5708 1.5708 -1.5708 -1.5708 0 0.0 0.0"/> -->
+<!--   </keyframe> -->
 </mujoco>
